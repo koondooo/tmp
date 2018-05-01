@@ -8,9 +8,9 @@ import torch.optim as optim
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class LSTMClassifier(nn.Module):
-    def __init__(self, input_size, num_classes, hidden_size):
+    def __init__(self, num_words, num_classes, hidden_size):
         super(LSTMClassifier, self).__init__()
-        self.hidden_size = hidden_size
+        input_size = num_words + 1 # including pad
         self.embedding = nn.Embedding(input_size, hidden_size, padding_idx=0)
         self.lstm = nn.LSTM(hidden_size, hidden_size)
         self.linear = nn.Linear(hidden_size, num_classes)
@@ -22,7 +22,7 @@ class LSTMClassifier(nn.Module):
         packed = pack_padded_sequence(embedded, input_lengths)
         output, hidden_cell_states = self.lstm(packed)
         hidden_state, cell_state = hidden_cell_states
-        hidden = hidden_state[0] # this index '0' depends on the LSTM setting (num_layers and bidirectional)
+        hidden = hidden_state[hidden_state.size()[0] - 1] # this index depends on your LSTM setting (num_layers and bidirectional)
 
         output = self.linear(hidden)
 
@@ -38,7 +38,7 @@ def make_XY(data):
     return inputs, labels
 
 if __name__ == "__main__":
-    num_words = 11 # including 0 for pad
+    num_words = 10
     num_classes = 4
     hidden_size = 20
     model = LSTMClassifier(num_words, num_classes, hidden_size).to(device)
@@ -47,6 +47,8 @@ if __name__ == "__main__":
     optimizer = optim.SGD(model.parameters(), lr=0.01)
 
     # train
+    # x must start from 1 because 0 is used for pad
+    # y must start from 0
     data_train = [
         {"x": [1, 2, 3],    "y": 0},
         {"x": [4, 5, 6, 7], "y": 1},
