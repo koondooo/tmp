@@ -58,7 +58,7 @@ if __name__ == "__main__":
     model = LSTMAttnClassifier(num_words, num_classes, hidden_size).to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=0.01)
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
 
     # train
     # x must start from 1 because 0 is used for pad
@@ -71,13 +71,13 @@ if __name__ == "__main__":
     ]
     inputs, labels = make_XY(data_train)
 
-    for epoch in range(0, 10000):
+    for epoch in range(0, 100):
         optimizer.zero_grad()
         outputs = model(inputs)
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
-        if epoch % 100 == 99:
+        if epoch % 10 == 9:
             print("loss is %.3f" % loss.item())
 
     # test
