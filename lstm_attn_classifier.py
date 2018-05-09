@@ -23,19 +23,22 @@ class LSTMAttnClassifier(nn.Module):
         input_lengths = [x.size()[0] for x in input]
         packed = pack_padded_sequence(embedded, input_lengths, batch_first=True)
         output, (hidden_state, cell_state) = self.lstm(packed)
-        hidden = hidden_state[hidden_state.size()[0] - 1] # this index depends on your LSTM setting (num_layers and bidirectional)
+        lstm_output = hidden_state[hidden_state.size()[0] - 1]
 
         # attension
-        hidden_expanded = torch.unsqueeze(hidden, dim=1).expand(-1, embedded.size()[1], -1)
-        attn_scores = F.cosine_similarity(embedded, hidden_expanded, dim=2)
-        attn_scores[attn_scores==0] = float("-inf")
+        lstm_output_expanded = lstm_output.unsqueeze(dim=1).expand(-1, embedded.size()[1], -1)
+        attn_scores = F.cosine_similarity(embedded, lstm_output_expanded, dim=2)
+        attn_scores[attn_scores==0] = float("-inf") # set -inf at empty cells to calculate softmax
         attn_weights = F.softmax(attn_scores, dim=1)
 
         # apply attension
-        attn_applied = torch.sum(embedded * attn_weights.unsqueeze(dim=2), dim=1)
+        attn_applied = torch.mul(embedded,
+                attn_weights.unsqueeze(dim=2) #.expand(-1, -1, embedded.size()[2]) # expand is unnecessary because the shapes of the tensors are 'broadcastable'
+                )
+        hidden = torch.sum(attn_applied, dim=1)
 
         # output
-        output = self.linear(attn_applied)
+        output = self.linear(hidden)
 
         return F.softmax(output, dim=1)
 
