@@ -27,7 +27,7 @@ class SimpleCNNClassifier(nn.Module):
 
         output = self.linear(h_pool.squeeze(dim=3).squeeze(dim=2))
 
-        return F.softmax(output, dim=1)
+        return output
 
 def make_XY(data, max_sentence_len):
     inputs, labels = [], []

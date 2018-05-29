@@ -25,7 +25,7 @@ class LSTMClassifier(nn.Module):
 
         output = self.linear(hidden)
 
-        return F.softmax(output, dim=1)
+        return output
 
 def make_XY(data):
     inputs, labels = [], []

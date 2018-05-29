@@ -36,7 +36,7 @@ class CNNClassifier(nn.Module):
         h_l1 = F.dropout(F.tanh(h_l1), p=0.5, training=training)
         h_l2 = self.linear2(h_l1)
 
-        return F.softmax(h_l2, dim=1)
+        return h_l2
 
     def add_modules(self, name_prefix, modules):
         for i, module in enumerate(modules):
