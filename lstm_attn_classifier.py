@@ -12,7 +12,7 @@ class LSTMAttnClassifier(nn.Module):
         super(LSTMAttnClassifier, self).__init__()
         input_size = num_words + 1 # including pad
         self.embedding = nn.Embedding(input_size, hidden_size, padding_idx=0)
-        self.lstm = nn.LSTM(hidden_size, hidden_size)
+        self.lstm = nn.LSTM(hidden_size, hidden_size, batch_first=True)
         self.linear = nn.Linear(hidden_size, num_classes)
 
     def forward(self, input):
@@ -22,12 +22,12 @@ class LSTMAttnClassifier(nn.Module):
         # LSTM
         input_lengths = [x.size()[0] for x in input]
         packed = pack_padded_sequence(embedded, input_lengths, batch_first=True)
-        output, (hidden_state, cell_state) = self.lstm(packed)
-        lstm_output = hidden_state[hidden_state.size()[0] - 1]
+        lstm_out, (hidden_state, cell_state) = self.lstm(packed)
+        lstm_last_out = torch.cat([v[size-1].unsqueeze(dim=0) for v, size in zip(*pad_packed_sequence(lstm_out, batch_first=True))])
 
         # attension
-        lstm_output_expanded = lstm_output.unsqueeze(dim=1).expand(-1, embedded.size()[1], -1)
-        attn_scores = F.cosine_similarity(embedded, lstm_output_expanded, dim=2)
+        lstm_out_expanded = lstm_last_out.unsqueeze(dim=1).expand(-1, embedded.size()[1], -1)
+        attn_scores = F.cosine_similarity(embedded, lstm_out_expanded, dim=2)
         attn_scores[attn_scores==0] = float("-inf") # set -inf at empty cells to calculate softmax
         attn_weights = F.softmax(attn_scores, dim=1)
 

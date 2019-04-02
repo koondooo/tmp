@@ -20,10 +20,10 @@ class LSTMClassifier(nn.Module):
 
         input_lengths = [x.size()[0] for x in input]
         packed = pack_padded_sequence(embedded, input_lengths)
-        output, (hidden_state, cell_state) = self.lstm(packed)
-        hidden = hidden_state[hidden_state.size()[0] - 1] # this index depends on your LSTM setting (num_layers and bidirectional)
+        lstm_out, (hidden_state, cell_state) = self.lstm(packed)
+        lstm_last_out = torch.cat([v[size-1].unsqueeze(dim=0) for v, size in zip(*pad_packed_sequence(lstm_out, batch_first=True))])
 
-        output = self.linear(hidden)
+        output = self.linear(lstm_last_out)
 
         return output
 
